@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ecolearn Authentication Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .step.active {
+            background-color: #e8f5e8;
+            border-color: #4CAF50;
+        }
+        input, button {
+            margin: 5px;
+            padding: 8px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+        .log {
+            background-color: #f5f5f5;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            border-radius: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        #mathChallenge {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🌱 Ecolearn Authentication Flow Test</h1>
+    
+    <div class="step active" id="step1">
+        <h2>Step 1: Registration</h2>
+        <div>
+            <input type="text" id="firstName" placeholder="First Name" value="John">
+            <input type="text" id="lastName" placeholder="Last Name" value="Doe"><br>
+            <input type="email" id="email" placeholder="Email" value="test@example.com">
+            <input type="password" id="password" placeholder="Password" value="password123"><br>
+            
+            <div id="mathChallenge">
+                <div>🔒 Security Check: <span id="mathQuestion"></span></div>
+                <input type="number" id="mathAnswer" placeholder="Answer">
+                <button onclick="verifyMath()">Verify Math</button>
+                <button onclick="generateMathChallenge()">🔄 New Question</button>
+                <div id="mathStatus"></div>
+            </div>
+            
+            <button onclick="register()" id="registerBtn" disabled>Register User</button>
+        </div>
+    </div>
+
+    <div class="step" id="step2">
+        <h2>Step 2: OTP Verification</h2>
+        <div>
+            <p>Check your email for the 6-digit OTP code.</p>
+            <input type="text" id="otp" placeholder="Enter 6-digit OTP" maxlength="6">
+            <button onclick="verifyOTP()">Verify OTP</button>
+            <button onclick="resendOTP()">Resend OTP</button>
+        </div>
+    </div>
+
+    <div class="step" id="step3">
+        <h2>Step 3: Login Test</h2>
+        <div>
+            <input type="email" id="loginEmail" placeholder="Email">
+            <input type="password" id="loginPassword" placeholder="Password">
+            <button onclick="login()">Login</button>
+        </div>
+    </div>
+
+    <div class="step">
+        <h2>📋 API Response Log</h2>
+        <div id="log" class="log"></div>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <script>
+        let currentToken = '';
+        let currentEmail = '';
+        let mathAnswer = 0;
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function generateMathChallenge() {
+            const operations = [
+                { op: '+', symbol: '+' },
+                { op: '-', symbol: '−' },
+                { op: '*', symbol: '×' }
+            ];
+            
+            const operation = operations[Math.floor(Math.random() * operations.length)];
+            let num1, num2;
+            
+            switch (operation.op) {
+                case '+':
+                    num1 = Math.floor(Math.random() * 50) + 1;
+                    num2 = Math.floor(Math.random() * 50) + 1;
+                    mathAnswer = num1 + num2;
+                    break;
+                case '-':
+                    num1 = Math.floor(Math.random() * 50) + 25;
+                    num2 = Math.floor(Math.random() * 25) + 1;
+                    mathAnswer = num1 - num2;
+                    break;
+                case '*':
+                    num1 = Math.floor(Math.random() * 10) + 1;
+                    num2 = Math.floor(Math.random() * 10) + 1;
+                    mathAnswer = num1 * num2;
+                    break;
+            }
+            
+            document.getElementById('mathQuestion').textContent = `${num1} ${operation.symbol} ${num2} = ?`;
+            document.getElementById('mathAnswer').value = '';
+            document.getElementById('mathStatus').innerHTML = '';
+            document.getElementById('registerBtn').disabled = true;
+            currentToken = '';
+        }
+
+        function verifyMath() {
+            const userAnswer = parseInt(document.getElementById('mathAnswer').value);
+            if (userAnswer === mathAnswer) {
+                currentToken = `custom_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+                document.getElementById('mathStatus').innerHTML = '<span class="success">✅ Math verified!</span>';
+                document.getElementById('registerBtn').disabled = false;
+                log('✅ reCAPTCHA verification successful');
+            } else {
+                document.getElementById('mathStatus').innerHTML = '<span class="error">❌ Wrong answer. Try again!</span>';
+                setTimeout(generateMathChallenge, 1000);
+                log('❌ reCAPTCHA verification failed - wrong answer');
+            }
+        }
+
+        async function register() {
+            if (!currentToken) {
+                alert('Please complete the math challenge first');
+                return;
+            }
+
+            const userData = {
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                role: 'student',
+                recaptchaToken: currentToken
+            };
+
+            currentEmail = userData.email;
+            log('🔄 Sending registration request...');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(userData)
+                });
+
+                const data = await response.json();
+                log(`📨 Registration response: ${JSON.stringify(data, null, 2)}`);
+
+                if (response.ok) {
+                    log('✅ Registration successful! Check your email for OTP.');
+                    document.getElementById('step1').classList.remove('active');
+                    document.getElementById('step2').classList.add('active');
+                    document.getElementById('loginEmail').value = userData.email;
+                    document.getElementById('loginPassword').value = userData.password;
+                } else {
+                    log(`❌ Registration failed: ${data.message}`);
+                }
+            } catch (error) {
+                log(`❌ Registration error: ${error.message}`);
+            }
+        }
+
+        async function verifyOTP() {
+            const otp = document.getElementById('otp').value;
+            if (otp.length !== 6) {
+                alert('Please enter a 6-digit OTP');
+                return;
+            }
+
+            log('🔄 Verifying OTP...');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/verify-otp', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email: currentEmail,
+                        otp: otp
+                    })
+                });
+
+                const data = await response.json();
+                log(`📨 OTP verification response: ${JSON.stringify(data, null, 2)}`);
+
+                if (response.ok) {
+                    log('✅ OTP verification successful! You can now login.');
+                    document.getElementById('step2').classList.remove('active');
+                    document.getElementById('step3').classList.add('active');
+                } else {
+                    log(`❌ OTP verification failed: ${data.message}`);
+                }
+            } catch (error) {
+                log(`❌ OTP verification error: ${error.message}`);
+            }
+        }
+
+        async function login() {
+            const loginData = {
+                email: document.getElementById('loginEmail').value,
+                password: document.getElementById('loginPassword').value
+            };
+
+            log('🔄 Attempting login...');
+            
+            try {
+                const response = await fetch('http://localhost:5000/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(loginData)
+                });
+
+                const data = await response.json();
+                log(`📨 Login response: ${JSON.stringify(data, null, 2)}`);
+
+                if (response.ok) {
+                    log('✅ Login successful! Authentication flow complete.');
+                } else {
+                    log(`❌ Login failed: ${data.message}`);
+                }
+            } catch (error) {
+                log(`❌ Login error: ${error.message}`);
+            }
+        }
+
+        async function resendOTP() {
+            log('🔄 Resending OTP...');
+            // Implementation would depend on your resend OTP endpoint
+            log('ℹ️ Resend OTP functionality needs to be implemented');
+        }
+
+        // Initialize
+        generateMathChallenge();
+        log('🚀 Ecolearn Authentication Test initialized');
+        log('ℹ️ Backend running on: http://localhost:5000');
+        log('ℹ️ Complete Step 1 first, then check your email for OTP');
+    </script>
+</body>
+</html>

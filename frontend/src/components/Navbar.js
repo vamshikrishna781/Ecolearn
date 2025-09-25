@@ -94,7 +94,15 @@ const Navbar = () => {
                   : 'text-gray-600 hover:text-green-700 hover:bg-green-50'
               }`}
             >
-              <User size={18} />
+              {user?.avatar ? (
+                <img
+                  src={`http://localhost:5000${user.avatar}`}
+                  alt="Profile"
+                  className="w-5 h-5 rounded-full object-cover border border-green-200"
+                />
+              ) : (
+                <User size={18} />
+              )}
               <span className="hidden sm:inline">
                 {user?.firstName}
               </span>

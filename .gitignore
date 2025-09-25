@@ -34,6 +34,10 @@ logs
 *.log
 server.log
 
+# Uploaded files
+uploads/
+backend/uploads/
+
 # Coverage directory used by tools like istanbul
 coverage/
 *.lcov

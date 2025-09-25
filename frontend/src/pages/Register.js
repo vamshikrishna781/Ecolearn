@@ -155,9 +155,9 @@ const Register = () => {
         <div className="max-w-md w-full space-y-8">
           <div className="text-center">
             <div className="flex justify-center">
-              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-primary-500 rounded-full flex items-center justify-center">
-                <Mail className="text-white" size={32} />
-              </div>
+              <Link to="/" className="w-16 h-16 bg-gradient-to-r from-green-500 to-primary-500 rounded-full flex items-center justify-center hover:shadow-lg transition-all duration-200 cursor-pointer transform hover:scale-105">
+                <Leaf className="text-white" size={32} />
+              </Link>
             </div>
             <h2 className="mt-6 text-3xl font-extrabold eco-text-gradient">
               Verify Your Email
@@ -229,9 +229,9 @@ const Register = () => {
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-primary-500 rounded-full flex items-center justify-center">
+            <Link to="/" className="w-16 h-16 bg-gradient-to-r from-green-500 to-primary-500 rounded-full flex items-center justify-center hover:shadow-lg transition-all duration-200 cursor-pointer transform hover:scale-105">
               <Leaf className="text-white" size={32} />
-            </div>
+            </Link>
           </div>
           <h2 className="mt-6 text-3xl font-extrabold eco-text-gradient">
             Join Ecolearn

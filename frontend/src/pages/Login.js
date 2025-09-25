@@ -57,9 +57,9 @@ const Login = () => {
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center">
-            <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-primary-500 rounded-full flex items-center justify-center">
+            <Link to="/" className="w-16 h-16 bg-gradient-to-r from-green-500 to-primary-500 rounded-full flex items-center justify-center hover:shadow-lg transition-all duration-200 cursor-pointer transform hover:scale-105">
               <Leaf className="text-white" size={32} />
-            </div>
+            </Link>
           </div>
           <h2 className="mt-6 text-3xl font-extrabold eco-text-gradient">
             Welcome back to Ecolearn

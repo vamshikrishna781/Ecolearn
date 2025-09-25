@@ -129,6 +129,13 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (profileData) => {
     try {
+      // If it's just an avatar update, update user state directly
+      if (profileData.avatar && Object.keys(profileData).length === 1) {
+        setUser(prev => ({ ...prev, avatar: profileData.avatar }));
+        return { success: true, user: { ...user, avatar: profileData.avatar } };
+      }
+      
+      // For other profile updates, make API call
       const response = await axios.put('/api/users/profile', profileData);
       setUser(response.data);
       toast.success('Profile updated successfully! 🌱');

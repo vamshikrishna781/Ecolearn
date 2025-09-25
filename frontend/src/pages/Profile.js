@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Mail, School, Calendar, Award, Edit3, Save, X } from 'lucide-react';
+import { User, Mail, School, Calendar, Award, Edit3, Save, X, Camera, Upload } from 'lucide-react';
 
 const Profile = () => {
   const { user, updateProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [editForm, setEditForm] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -29,6 +30,54 @@ const Profile = () => {
     setIsEditing(false);
   };
 
+  const handleAvatarUpload = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('File size must be less than 5MB');
+      return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file');
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('avatar', file);
+
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/users/avatar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        // Update user context with new avatar
+        updateProfile({ avatar: result.avatarUrl });
+        alert('Profile picture updated successfully!');
+      } else {
+        alert(result.message || 'Failed to upload profile picture');
+      }
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      alert('Failed to upload profile picture');
+    } finally {
+      setIsUploadingAvatar(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
@@ -40,8 +89,37 @@ const Profile = () => {
         {/* Profile Card */}
         <div className="lg:col-span-1">
           <div className="card p-6 text-center">
-            <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <User className="text-green-600" size={48} />
+            <div className="relative w-24 h-24 mx-auto mb-4">
+              {user?.avatar ? (
+                <img
+                  src={`http://localhost:5000${user.avatar}`}
+                  alt="Profile"
+                  className="w-24 h-24 rounded-full object-cover border-4 border-green-100"
+                />
+              ) : (
+                <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
+                  <User className="text-green-600" size={48} />
+                </div>
+              )}
+              <label
+                htmlFor="avatar-upload"
+                className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-green-700 transition-colors shadow-md"
+                title="Change profile picture"
+              >
+                {isUploadingAvatar ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                ) : (
+                  <Camera className="text-white" size={16} />
+                )}
+              </label>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/*"
+                onChange={handleAvatarUpload}
+                className="hidden"
+                disabled={isUploadingAvatar}
+              />
             </div>
             <h3 className="text-xl font-semibold mb-2">
               {user?.firstName} {user?.lastName}

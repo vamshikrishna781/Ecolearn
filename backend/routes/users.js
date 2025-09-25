@@ -2,6 +2,9 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const { auth, adminAuth, teacherAuth } = require('../middleware/auth');
+const { upload } = require('../middleware/upload');
+const path = require('path');
+const fs = require('fs');
 
 const router = express.Router();
 
@@ -15,6 +18,55 @@ router.get('/profile', auth, async (req, res) => {
   } catch (error) {
     console.error('Get profile error:', error);
     res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Upload avatar
+router.post('/avatar', auth, upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+
+    // Delete old avatar if it exists
+    const user = await User.findById(req.user._id);
+    if (user.avatar) {
+      const oldAvatarPath = path.join(__dirname, '../uploads/avatars', path.basename(user.avatar));
+      if (fs.existsSync(oldAvatarPath)) {
+        fs.unlinkSync(oldAvatarPath);
+      }
+    }
+
+    // Update user with new avatar path
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { avatar: avatarUrl },
+      { new: true }
+    ).select('-password').populate('school');
+
+    global.logToFile && global.logToFile('INFO', `Avatar uploaded for user ${user.email}`, { 
+      filename: req.file.filename,
+      size: req.file.size 
+    });
+
+    res.json({
+      message: 'Avatar uploaded successfully',
+      user: updatedUser,
+      avatarUrl: avatarUrl
+    });
+  } catch (error) {
+    console.error('Avatar upload error:', error);
+    
+    // Clean up uploaded file if there was an error
+    if (req.file) {
+      const filePath = req.file.path;
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+    
+    res.status(500).json({ message: 'Failed to upload avatar' });
   }
 });
 

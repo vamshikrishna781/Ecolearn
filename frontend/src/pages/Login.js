@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { useAuth } from '../contexts/AuthContext';
 import { Eye, EyeOff, Leaf, Mail, Lock } from 'lucide-react';
+import toast from 'react-hot-toast';
 import CustomRecaptcha from '../utils/CustomRecaptcha';
 
 const Login = () => {
@@ -10,6 +11,7 @@ const Login = () => {
   const [recaptchaToken, setRecaptchaToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [recaptchaKey, setRecaptchaKey] = useState(0); // For resetting recaptcha
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,22 +35,37 @@ const Login = () => {
     }
   }, [location.state, setValue]);
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data, event) => {
+    if (event) {
+      event.preventDefault();
+    }
+    
     if (!recaptchaToken) {
-      alert('Please complete the reCAPTCHA verification');
+      toast.error('Please complete the reCAPTCHA verification');
       return;
     }
 
     setIsLoading(true);
-    const result = await login({
-      ...data,
-      recaptchaToken
-    });
-    
-    if (result.success) {
-      navigate('/dashboard');
+    try {
+      const result = await login({
+        ...data,
+        recaptchaToken
+      });
+      
+      if (result.success) {
+        navigate('/dashboard');
+      } else {
+        // Reset reCAPTCHA on login failure
+        setRecaptchaToken('');
+        setRecaptchaKey(prev => prev + 1); // Force recaptcha reset
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setRecaptchaToken('');
+      setRecaptchaKey(prev => prev + 1); // Force recaptcha reset
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
@@ -143,7 +160,10 @@ const Login = () => {
           </div>
 
           {/* reCAPTCHA */}
-          <CustomRecaptcha onVerify={setRecaptchaToken} />
+          <CustomRecaptcha 
+            key={recaptchaKey} 
+            onVerify={setRecaptchaToken} 
+          />
 
           {/* Forgot Password Link */}
           <div className="flex items-center justify-between">

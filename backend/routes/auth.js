@@ -233,28 +233,28 @@ router.post('/login', [
     const recaptchaValid = await verifyRecaptcha(recaptchaToken);
     if (!recaptchaValid) {
       logAuthEvent('LOGIN', email, false, new Error('reCAPTCHA verification failed'));
-      return res.status(400).json({ message: 'reCAPTCHA verification failed' });
+      return res.status(400).json({ message: 'Security verification failed. Please complete the reCAPTCHA challenge correctly.' });
     }
 
     // Find user
     const user = await User.findOne({ email }).populate('school');
     if (!user) {
       logAuthEvent('LOGIN', email, false, new Error('User not found'));
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'No account found with this email address. Please check your email or create a new account.' });
     }
 
     // Check password
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       logAuthEvent('LOGIN', email, false, new Error('Invalid password'), { userId: user._id });
-      return res.status(400).json({ message: 'Invalid credentials' });
+      return res.status(401).json({ message: 'Incorrect password. Please check your password and try again.' });
     }
 
     // Check if user is verified
     if (!user.isVerified) {
       logAuthEvent('LOGIN', email, false, new Error('Email not verified'), { userId: user._id });
       return res.status(400).json({ 
-        message: 'Please verify your email first',
+        message: 'Your email address is not verified. Please check your email and click the verification link.',
         needsVerification: true,
         email: user.email
       });
@@ -263,7 +263,7 @@ router.post('/login', [
     // Check if user is active
     if (!user.isActive) {
       logAuthEvent('LOGIN', email, false, new Error('Account deactivated'), { userId: user._id });
-      return res.status(400).json({ message: 'Account is deactivated' });
+      return res.status(403).json({ message: 'Your account has been deactivated. Please contact support for assistance.' });
     }
 
     // Generate JWT

@@ -1,11 +1,31 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { User, Mail, School, Calendar, Award, Edit3, Save, X, Camera, Upload } from 'lucide-react';
+import { User, Mail, School, Calendar, Save, X, Camera, Edit3, Award, Trash2 } from 'lucide-react';
 
 const Profile = () => {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, refreshProfile, logout } = useAuth();
+  const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [isDeletingAvatar, setIsDeletingAvatar] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+
+  // Refresh profile data when component mounts (only if user exists)
+  React.useEffect(() => {
+    if (user && !user.avatar) {
+      console.log('Profile component mounted, refreshing profile data...');
+      refreshProfile().catch(error => {
+        console.error('Error refreshing profile:', error);
+        // Don't logout on profile refresh errors
+      });
+    }
+  }, [refreshProfile, user]);
+
+  // Debug avatar information
+  console.log('Profile Component - User data:', user);
+  console.log('User avatar field:', user?.avatar);
+  console.log('Avatar URL would be:', user?.avatar ? `http://localhost:5000${user.avatar}` : 'No avatar');
   const [editForm, setEditForm] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -78,6 +98,88 @@ const Profile = () => {
     }
   };
 
+  const handleAvatarDelete = async () => {
+    if (!user?.avatar) return;
+    
+    if (!window.confirm('Are you sure you want to delete your profile picture?')) {
+      return;
+    }
+
+    setIsDeletingAvatar(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/users/avatar', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        // Update user context to remove avatar
+        updateProfile({ avatar: '' });
+        alert('Profile picture deleted successfully!');
+      } else {
+        alert(result.message || 'Failed to delete profile picture');
+      }
+    } catch (error) {
+      console.error('Avatar delete error:', error);
+      alert('Failed to delete profile picture');
+    } finally {
+      setIsDeletingAvatar(false);
+    }
+  };
+
+  const handleDeleteAccount = async () => {
+    const confirmText = `DELETE_${user?.firstName}_ACCOUNT`;
+    const userInput = window.prompt(
+      `⚠️ WARNING: This action is irreversible!\n\n` +
+      `This will permanently delete your account and all associated data including:\n` +
+      `• Profile information\n` +
+      `• Game progress and achievements\n` +
+      `• Eco-points and badges\n` +
+      `• All uploaded content\n\n` +
+      `To confirm deletion, type: ${confirmText}`
+    );
+
+    if (userInput !== confirmText) {
+      if (userInput !== null) {
+        alert('Account deletion cancelled - confirmation text did not match.');
+      }
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    try {
+      const response = await fetch('http://localhost:5000/api/users/delete-account', {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert('Your account has been permanently deleted. You will now be logged out.');
+        logout();
+        navigate('/');
+      } else {
+        alert(result.message || 'Failed to delete account');
+      }
+    } catch (error) {
+      console.error('Account deletion error:', error);
+      alert('Failed to delete account. Please try again.');
+    } finally {
+      setIsDeletingAccount(false);
+    }
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
@@ -90,17 +192,31 @@ const Profile = () => {
         <div className="lg:col-span-1">
           <div className="card p-6 text-center">
             <div className="relative w-24 h-24 mx-auto mb-4">
-              {user?.avatar ? (
-                <img
-                  src={`http://localhost:5000${user.avatar}`}
-                  alt="Profile"
-                  className="w-24 h-24 rounded-full object-cover border-4 border-green-100"
-                />
+              {user?.avatar && user.avatar.trim() ? (
+                <>
+                  <img
+                    src={`http://localhost:5000${user.avatar}`}
+                    alt="User Avatar"
+                    className="w-24 h-24 rounded-full object-cover border-4 border-green-100"
+                    onLoad={() => console.log('Avatar loaded successfully:', `http://localhost:5000${user.avatar}`)}
+                    onError={(e) => {
+                      console.error('Avatar image failed to load:', e.target.src);
+                      console.error('User avatar path:', user.avatar);
+                      e.target.style.display = 'none';
+                      e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                  <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center" style={{display: 'none'}}>
+                    <User className="text-green-600" size={48} />
+                  </div>
+                </>
               ) : (
                 <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center">
                   <User className="text-green-600" size={48} />
                 </div>
               )}
+              
+              {/* Upload button */}
               <label
                 htmlFor="avatar-upload"
                 className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-green-700 transition-colors shadow-md"
@@ -112,13 +228,30 @@ const Profile = () => {
                   <Camera className="text-white" size={16} />
                 )}
               </label>
+              
+              {/* Delete button - only show if user has avatar */}
+              {user?.avatar && user.avatar.trim() && (
+                <button
+                  onClick={handleAvatarDelete}
+                  disabled={isDeletingAvatar || isUploadingAvatar}
+                  className="absolute -bottom-1 -left-1 w-8 h-8 bg-red-600 rounded-full flex items-center justify-center cursor-pointer hover:bg-red-700 transition-colors shadow-md disabled:opacity-50"
+                  title="Delete profile picture"
+                >
+                  {isDeletingAvatar ? (
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  ) : (
+                    <X className="text-white" size={16} />
+                  )}
+                </button>
+              )}
+              
               <input
                 id="avatar-upload"
                 type="file"
                 accept="image/*"
                 onChange={handleAvatarUpload}
                 className="hidden"
-                disabled={isUploadingAvatar}
+                disabled={isUploadingAvatar || isDeletingAvatar}
               />
             </div>
             <h3 className="text-xl font-semibold mb-2">
@@ -291,6 +424,34 @@ const Profile = () => {
               </div>
             </div>
           )}
+
+          {/* Dangerous Actions Section */}
+          <div className="card p-6 border-red-200">
+            <h3 className="text-lg font-semibold mb-4 text-red-600">⚠️ Dangerous Actions</h3>
+            <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+              <h4 className="font-medium text-red-800 mb-2">Delete Account</h4>
+              <p className="text-sm text-red-700 mb-4">
+                Permanently delete your account and all associated data. This action cannot be undone.
+              </p>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={isDeletingAccount}
+                className="flex items-center space-x-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isDeletingAccount ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Deleting Account...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    <span>Delete Account</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

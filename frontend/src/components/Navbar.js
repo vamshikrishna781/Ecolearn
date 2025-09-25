@@ -16,6 +16,10 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Debug user data in Navbar
+  console.log('Navbar - User data:', user);
+  console.log('Navbar - User avatar:', user?.avatar);
+
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -94,15 +98,20 @@ const Navbar = () => {
                   : 'text-gray-600 hover:text-green-700 hover:bg-green-50'
               }`}
             >
-              {user?.avatar ? (
+              {user?.avatar && user.avatar.trim() ? (
                 <img
                   src={`http://localhost:5000${user.avatar}`}
                   alt="Profile"
                   className="w-5 h-5 rounded-full object-cover border border-green-200"
+                  onLoad={() => console.log('Navbar avatar loaded:', `http://localhost:5000${user.avatar}`)}
+                  onError={(e) => {
+                    console.error('Navbar avatar failed to load:', e.target.src);
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'inline';
+                  }}
                 />
-              ) : (
-                <User size={18} />
-              )}
+              ) : null}
+              {(!user?.avatar || !user.avatar.trim()) && <User size={18} />}
               <span className="hidden sm:inline">
                 {user?.firstName}
               </span>

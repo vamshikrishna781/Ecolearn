@@ -1,6 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
+
+// Configure axios defaults
+axios.defaults.baseURL = 'http://localhost:5000';
+axios.defaults.timeout = 10000; // 10 second timeout
 
 const AuthContext = createContext();
 
@@ -17,6 +21,54 @@ export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Add axios response interceptor to handle errors globally
+  useEffect(() => {
+    const responseInterceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        // Don't auto-logout on network errors
+        if (!error.response) {
+          console.error('Network error:', error.message);
+          return Promise.reject(error);
+        }
+        
+        // Only auto-logout on 401 Unauthorized errors
+        if (error.response.status === 401) {
+          console.log('Authentication error detected, token may be invalid');
+          // Don't automatically logout here - let individual components handle it
+        }
+        
+        return Promise.reject(error);
+      }
+    );
+
+    return () => {
+      axios.interceptors.response.eject(responseInterceptor);
+    };
+  }, []);
+
+  const fetchUserProfile = useCallback(async () => {
+    try {
+      const response = await axios.get('/api/users/profile');
+      setUser(response.data);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error('Failed to fetch user profile:', error);
+      // Only logout on authentication errors (401), not on network or server errors
+      if (error.response && error.response.status === 401) {
+        console.log('Token expired or invalid, logging out');
+        localStorage.removeItem('token');
+        delete axios.defaults.headers.common['Authorization'];
+        setUser(null);
+        setIsAuthenticated(false);
+      } else {
+        console.log('Network or server error, not logging out:', error.message);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
@@ -25,20 +77,7 @@ export function AuthProvider({ children }) {
     } else {
       setLoading(false);
     }
-  }, []);
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await axios.get('/api/users/profile');
-      setUser(response.data);
-      setIsAuthenticated(true);
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error);
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchUserProfile]);
 
   const login = async (credentials) => {
     try {
@@ -54,7 +93,26 @@ export function AuthProvider({ children }) {
       toast.success(`Welcome back, ${user.firstName}! 🌱`);
       return { success: true };
     } catch (error) {
-      const message = error.response?.data?.message || 'Login failed';
+      console.error('Login error:', error);
+      let message = 'Login failed';
+      
+      if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.response?.data?.errors?.length > 0) {
+        // Handle validation errors
+        message = error.response.data.errors[0].msg;
+      } else if (error.response?.status === 400) {
+        message = 'Invalid email or password';
+      } else if (error.response?.status === 401) {
+        message = 'Invalid credentials';
+      } else if (error.response?.status === 403) {
+        message = 'Account access denied';
+      } else if (error.response?.status >= 500) {
+        message = 'Server error. Please try again later.';
+      } else if (error.code === 'NETWORK_ERROR') {
+        message = 'Network error. Please check your connection.';
+      }
+      
       toast.error(message);
       return { success: false, message };
     }
@@ -129,10 +187,13 @@ export function AuthProvider({ children }) {
 
   const updateProfile = async (profileData) => {
     try {
-      // If it's just an avatar update, update user state directly
-      if (profileData.avatar && Object.keys(profileData).length === 1) {
-        setUser(prev => ({ ...prev, avatar: profileData.avatar }));
-        return { success: true, user: { ...user, avatar: profileData.avatar } };
+      // If it's just an avatar update (upload or delete), update user state directly
+      if (profileData.avatar !== undefined && Object.keys(profileData).length === 1) {
+        console.log('AuthContext: Updating user avatar to:', profileData.avatar);
+        const newUser = { ...user, avatar: profileData.avatar };
+        setUser(newUser);
+        console.log('AuthContext: User state updated:', newUser);
+        return { success: true, user: newUser };
       }
       
       // For other profile updates, make API call
@@ -155,6 +216,16 @@ export function AuthProvider({ children }) {
     toast.success('Logged out successfully!');
   };
 
+  const refreshProfile = async () => {
+    try {
+      return await fetchUserProfile();
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+      // Don't throw the error to prevent components from breaking
+      return { success: false, error: error.message };
+    }
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -166,6 +237,7 @@ export function AuthProvider({ children }) {
     resetPassword,
     resendOTP,
     updateProfile,
+    refreshProfile,
     logout
   };
 

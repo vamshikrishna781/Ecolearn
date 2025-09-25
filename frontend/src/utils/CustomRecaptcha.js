@@ -7,32 +7,35 @@ const CustomRecaptcha = ({ onVerify, className = '' }) => {
   const [isVerified, setIsVerified] = useState(false);
   const [error, setError] = useState('');
 
-  const generateChallenge = () => {
-    // Generate 6-character alphanumeric challenge for custom reCAPTCHA
-    const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let challengeText = '';
-    
-    // Generate exactly 6 random characters
-    for (let i = 0; i < 6; i++) {
-      challengeText += chars.charAt(Math.floor(Math.random() * chars.length));
+  const generateChallenge = async () => {
+    try {
+      console.log('Fetching reCAPTCHA challenge from backend...');
+      // Fetch challenge from backend to ensure server knows the token
+      const response = await fetch('http://localhost:5000/api/auth/recaptcha');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const challengeData = await response.json();
+      console.log('reCAPTCHA challenge received:', challengeData);
+      
+      setChallenge({
+        question: challengeData.challenge,
+        answer: challengeData.answer,
+        token: challengeData.token,
+        displayText: challengeData.displayText
+      });
+      
+      setUserAnswer('');
+      setIsVerified(false);
+      setError('');
+      // Clear previous token when generating new question
+      onVerify('');
+    } catch (error) {
+      console.error('Failed to generate reCAPTCHA challenge:', error);
+      setError(`Failed to load security challenge: ${error.message}. Please refresh the page.`);
     }
-    
-    // Generate a secure token with timestamp and random string
-    const timestamp = Date.now();
-    const randomString = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
-    
-    setChallenge({
-      question: `Type exactly: ${challengeText}`,
-      answer: challengeText,
-      token: `custom_${timestamp}_${randomString}`,
-      displayText: challengeText
-    });
-    
-    setUserAnswer('');
-    setIsVerified(false);
-    setError('');
-    // Clear previous token when generating new question
-    onVerify('');
   };
 
   const handleSubmit = (e) => {
@@ -52,9 +55,9 @@ const CustomRecaptcha = ({ onVerify, className = '' }) => {
     }
   };
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     generateChallenge();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

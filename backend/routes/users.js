@@ -70,6 +70,40 @@ router.post('/avatar', auth, upload.single('avatar'), async (req, res) => {
   }
 });
 
+// Delete avatar
+router.delete('/avatar', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    
+    if (!user.avatar) {
+      return res.status(400).json({ message: 'No avatar to delete' });
+    }
+
+    // Delete avatar file from disk
+    const avatarPath = path.join(__dirname, '../uploads/avatars', path.basename(user.avatar));
+    if (fs.existsSync(avatarPath)) {
+      fs.unlinkSync(avatarPath);
+    }
+
+    // Update user to remove avatar
+    const updatedUser = await User.findByIdAndUpdate(
+      req.user._id,
+      { avatar: '' },
+      { new: true }
+    ).select('-password').populate('school');
+
+    global.logToFile && global.logToFile('INFO', `Avatar deleted for user ${user.email}`);
+
+    res.json({
+      message: 'Avatar deleted successfully',
+      user: updatedUser
+    });
+  } catch (error) {
+    console.error('Avatar delete error:', error);
+    res.status(500).json({ message: 'Failed to delete avatar' });
+  }
+});
+
 // Update user profile
 router.put('/profile', auth, [
   body('firstName').optional().notEmpty().withMessage('First name cannot be empty'),
@@ -173,6 +207,52 @@ router.post('/create-student', [auth, teacherAuth], [
     });
   } catch (error) {
     console.error('Create student error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Delete user account (DELETE /api/users/delete-account)
+router.delete('/delete-account', auth, async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Delete user's avatar file if it exists
+    if (user.avatar) {
+      const fs = require('fs');
+      const path = require('path');
+      const avatarPath = path.join(__dirname, '..', user.avatar);
+      
+      if (fs.existsSync(avatarPath)) {
+        try {
+          fs.unlinkSync(avatarPath);
+          console.log('Avatar file deleted:', avatarPath);
+        } catch (fileError) {
+          console.error('Error deleting avatar file:', fileError);
+          // Continue with account deletion even if file deletion fails
+        }
+      }
+    }
+
+    // Delete the user account
+    await User.findByIdAndDelete(userId);
+
+    console.log(`User account deleted: ${user.email} (ID: ${userId})`);
+    
+    res.status(200).json({ 
+      message: 'Account deleted successfully',
+      deletedUser: {
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName
+      }
+    });
+  } catch (error) {
+    console.error('Delete account error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

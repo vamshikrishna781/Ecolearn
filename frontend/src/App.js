@@ -73,13 +73,35 @@ function AppRoutes() {
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Toaster 
-        position="top-right"
+        position="top-center"
         toastOptions={{
-          duration: 4000,
+          duration: 5000,
           style: {
             background: '#f0fdf4',
             color: '#166534',
-            border: '1px solid #bbf7d0'
+            border: '1px solid #bbf7d0',
+            borderRadius: '8px',
+            fontSize: '14px',
+            maxWidth: '400px'
+          },
+          success: {
+            duration: 4000,
+            iconTheme: {
+              primary: '#10B981',
+              secondary: '#fff'
+            }
+          },
+          error: {
+            duration: 6000,
+            style: {
+              background: '#fef2f2',
+              color: '#dc2626',
+              border: '1px solid #fecaca'
+            },
+            iconTheme: {
+              primary: '#EF4444',
+              secondary: '#fff'
+            }
           }
         }}
       />

@@ -1,0 +1,281 @@
+/* Accessibility Theme Styles */
+
+/* Default Light Theme */
+.theme-light,
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --bg-accent: #f0f9f4;
+  --text-primary: #1f2937;
+  --text-secondary: #6b7280;
+  --text-accent: #059669;
+  --border-primary: #d1d5db;
+  --border-accent: #10b981;
+}
+
+/* Apply theme colors to common elements */
+.theme-light body,
+.theme-light .login-container,
+.theme-light .register-container {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.theme-light .card,
+.theme-light .form-container,
+.theme-light .recaptcha-container {
+  background-color: var(--bg-primary);
+  border-color: var(--border-primary);
+  color: var(--text-primary);
+}
+
+/* Dark Theme */
+.theme-dark {
+  --bg-primary: #1f2937;
+  --bg-secondary: #111827;
+  --bg-accent: #064e3b;
+  --text-primary: #f9fafb;
+  --text-secondary: #d1d5db;
+  --text-accent: #10b981;
+  --border-primary: #374151;
+  --border-accent: #059669;
+}
+
+.theme-dark body,
+.theme-dark .login-container,
+.theme-dark .register-container {
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.theme-dark .card,
+.theme-dark .form-container,
+.theme-dark .modal,
+.theme-dark .recaptcha-container {
+  background-color: var(--bg-secondary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.theme-dark input,
+.theme-dark textarea,
+.theme-dark select {
+  background-color: var(--bg-primary) !important;
+  border-color: var(--border-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Theme-aware reCAPTCHA styling */
+.theme-dark .bg-gray-50 {
+  background-color: var(--bg-secondary) !important;
+}
+
+.theme-dark .bg-gray-100 {
+  background-color: var(--bg-primary) !important;
+}
+
+.theme-dark .text-gray-600,
+.theme-dark .text-gray-700 {
+  color: var(--text-secondary) !important;
+}
+
+/* High Contrast Theme */
+.theme-high-contrast {
+  --bg-primary: #000000;
+  --bg-secondary: #000000;
+  --bg-accent: #000000;
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+  --text-accent: #ffff00;
+  --border-primary: #ffffff;
+  --border-accent: #ffff00;
+}
+
+.theme-high-contrast * {
+  background-color: black !important;
+  color: white !important;
+  border-color: white !important;
+}
+
+.theme-high-contrast button,
+.theme-high-contrast .btn-primary {
+  background-color: yellow !important;
+  color: black !important;
+  border: 2px solid white !important;
+}
+
+.theme-high-contrast .btn-secondary {
+  background-color: white !important;
+  color: black !important;
+  border: 2px solid yellow !important;
+}
+
+/* Font Size Classes */
+.text-small {
+  font-size: 12px;
+}
+
+.text-small h1 { font-size: 1.5rem; }
+.text-small h2 { font-size: 1.25rem; }
+.text-small h3 { font-size: 1.125rem; }
+.text-small p, .text-small span, .text-small div { font-size: 0.75rem; }
+.text-small button { font-size: 0.75rem; }
+
+.text-medium {
+  font-size: 14px;
+}
+
+.text-medium h1 { font-size: 2rem; }
+.text-medium h2 { font-size: 1.5rem; }
+.text-medium h3 { font-size: 1.25rem; }
+.text-medium p, .text-medium span, .text-medium div { font-size: 0.875rem; }
+.text-medium button { font-size: 0.875rem; }
+
+.text-large {
+  font-size: 16px;
+}
+
+.text-large h1 { font-size: 2.5rem; }
+.text-large h2 { font-size: 2rem; }
+.text-large h3 { font-size: 1.5rem; }
+.text-large p, .text-large span, .text-large div { font-size: 1rem; }
+.text-large button { font-size: 1rem; }
+
+.text-extra-large {
+  font-size: 18px;
+}
+
+.text-extra-large h1 { font-size: 3rem; }
+.text-extra-large h2 { font-size: 2.5rem; }
+.text-extra-large h3 { font-size: 2rem; }
+.text-extra-large p, .text-extra-large span, .text-extra-large div { font-size: 1.125rem; }
+.text-extra-large button { font-size: 1.125rem; }
+
+/* Color Blind Support */
+.colorblind-protanopia {
+  filter: url('#protanopia-filter');
+}
+
+.colorblind-deuteranopia {
+  filter: url('#deuteranopia-filter');
+}
+
+.colorblind-tritanopia {
+  filter: url('#tritanopia-filter');
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Screen Reader Support */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus Indicators for Keyboard Navigation */
+*:focus {
+  outline: 2px solid var(--text-accent, #059669);
+  outline-offset: 2px;
+}
+
+button:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--text-accent, #059669);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1);
+}
+
+/* High Contrast Focus */
+.theme-high-contrast *:focus {
+  outline: 3px solid yellow !important;
+  outline-offset: 2px;
+}
+
+/* Color Blind Friendly Colors */
+.colorblind-safe-red { color: #d73027; }
+.colorblind-safe-green { color: #1a9850; }
+.colorblind-safe-blue { color: #313695; }
+.colorblind-safe-orange { color: #ff7f00; }
+.colorblind-safe-purple { color: #762a83; }
+
+/* Interactive Elements for Touch */
+@media (pointer: coarse) {
+  button,
+  input,
+  select {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Mobile-first responsive improvements */
+@media (max-width: 640px) {
+  .login-container,
+  .register-container {
+    padding: 1rem;
+  }
+  
+  .recaptcha-container {
+    font-size: 14px;
+  }
+  
+  .recaptcha-container input {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  * {
+    background: white !important;
+    color: black !important;
+  }
+}
+
+/* Language-specific font adjustments */
+[lang="hi"] {
+  font-family: 'Noto Sans Devanagari', 'Devanagari Sangam MN', sans-serif;
+}
+
+[lang="te"] {
+  font-family: 'Noto Sans Telugu', 'Telugu Sangam MN', sans-serif;
+}
+
+/* Skip Links */
+.skip-link {
+  position: absolute;
+  top: -40px;
+  left: 6px;
+  background: var(--bg-primary, white);
+  color: var(--text-primary, black);
+  padding: 8px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 1000;
+}
+
+.skip-link:focus {
+  top: 6px;
+}

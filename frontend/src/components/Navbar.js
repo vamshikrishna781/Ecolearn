@@ -8,6 +8,9 @@ import {
   GamepadIcon, 
   Settings, 
   LogOut,
+  Users,
+  Target,
+  Building,
   Leaf
 } from 'lucide-react';
 
@@ -30,6 +33,9 @@ const Navbar = () => {
   const navItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/game', icon: GamepadIcon, label: 'Game' },
+    { path: '/challenges', icon: Target, label: 'Challenges' },
+    { path: '/community', icon: Users, label: 'Community' },
+    { path: '/sponsors', icon: Building, label: 'Sponsors' },
     { path: '/leaderboard', icon: Trophy, label: 'Leaderboard' },
   ];
 
@@ -100,10 +106,10 @@ const Navbar = () => {
             >
               {user?.avatar && user.avatar.trim() ? (
                 <img
-                  src={`http://localhost:5000${user.avatar}`}
-                  alt="Profile"
-                  className="w-5 h-5 rounded-full object-cover border border-green-200"
-                  onLoad={() => console.log('Navbar avatar loaded:', `http://localhost:5000${user.avatar}`)}
+                  src={user.avatar}
+                  alt="User Avatar"
+                  className="w-8 h-8 rounded-full object-cover"
+                  onLoad={() => console.log('Navbar avatar loaded:', user.avatar)}
                   onError={(e) => {
                     console.error('Navbar avatar failed to load:', e.target.src);
                     e.target.style.display = 'none';

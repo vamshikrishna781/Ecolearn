@@ -12,6 +12,11 @@ import Game from './pages/Game';
 import Leaderboard from './pages/Leaderboard';
 import AdminPanel from './pages/AdminPanel';
 import LandingPage from './pages/LandingPage';
+import AccessibilitySettings from './components/AccessibilitySettings';
+import CommunityForum from './components/CommunityForum';
+import RealWorldChallenges from './components/RealWorldChallenges';
+import SponsorshipBranding from './components/SponsorshipBranding';
+import './styles/accessibility.css';
 
 function ProtectedRoute({ children, requiredRole = null }) {
   const { user, isAuthenticated } = useAuth();
@@ -61,6 +66,21 @@ function AppRoutes() {
             <Leaderboard />
           </ProtectedRoute>
         } />
+        <Route path="/community" element={
+          <ProtectedRoute>
+            <CommunityForum />
+          </ProtectedRoute>
+        } />
+        <Route path="/challenges" element={
+          <ProtectedRoute>
+            <RealWorldChallenges />
+          </ProtectedRoute>
+        } />
+        <Route path="/sponsors" element={
+          <ProtectedRoute>
+            <SponsorshipBranding />
+          </ProtectedRoute>
+        } />
         
         {/* Admin only routes */}
         <Route path="/admin" element={
@@ -105,6 +125,7 @@ function AppRoutes() {
           }
         }}
       />
+      <AccessibilitySettings />
     </div>
   );
 }

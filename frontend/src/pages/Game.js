@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { BookOpen, Play, CheckCircle, Lock, Trophy, Star } from 'lucide-react';
 import axios from 'axios';
+import QuizSystem from '../components/QuizSystem';
 
 const Game = () => {
   const { user } = useAuth();
@@ -11,12 +12,10 @@ const Game = () => {
   const [gameProgress, setGameProgress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedChallenge, setSelectedChallenge] = useState(null);
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [currentQuiz, setCurrentQuiz] = useState(null);
 
-  useEffect(() => {
-    fetchGameData();
-  }, [currentChapter]);
-
-  const fetchGameData = async () => {
+  const fetchGameData = useCallback(async () => {
     try {
       const [storylineRes, challengesRes, progressRes] = await Promise.all([
         axios.get(`/api/game/storyline/${currentChapter}`),
@@ -32,7 +31,11 @@ const Game = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentChapter]);
+
+  useEffect(() => {
+    fetchGameData();
+  }, [fetchGameData]);
 
   const handleCompleteChallenge = async (challengeId, pointsEarned) => {
     try {
@@ -69,6 +72,27 @@ const Game = () => {
     } catch (error) {
       console.error('Error completing chapter:', error);
     }
+  };
+
+  const handleQuizComplete = async (quizResult) => {
+    try {
+      const pointsEarned = Math.floor((quizResult.score / quizResult.total) * currentQuiz.points);
+      
+      await handleCompleteChallenge(currentQuiz.id, pointsEarned);
+      
+      setShowQuiz(false);
+      setCurrentQuiz(null);
+      
+      // Refresh game data
+      fetchGameData();
+    } catch (error) {
+      console.error('Error completing quiz:', error);
+    }
+  };
+
+  const handleQuizClose = () => {
+    setShowQuiz(false);
+    setCurrentQuiz(null);
   };
 
   if (loading) {
@@ -312,12 +336,18 @@ const Game = () => {
             <div className="flex space-x-3">
               <button
                 onClick={() => {
-                  handleCompleteChallenge(selectedChallenge.id, selectedChallenge.points);
+                  setCurrentQuiz({
+                    id: selectedChallenge.id,
+                    title: `${selectedChallenge.title} - Knowledge Test`,
+                    points: selectedChallenge.points,
+                    chapter: currentChapter
+                  });
+                  setShowQuiz(true);
                   setSelectedChallenge(null);
                 }}
                 className="btn-primary flex-1"
               >
-                Complete (+{selectedChallenge.points} pts)
+                Start Quiz (+{selectedChallenge.points} pts)
               </button>
               <button
                 onClick={() => setSelectedChallenge(null)}
@@ -328,6 +358,15 @@ const Game = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Quiz System */}
+      {showQuiz && currentQuiz && (
+        <QuizSystem
+          quizId={currentQuiz.id}
+          onComplete={handleQuizComplete}
+          onClose={handleQuizClose}
+        />
       )}
     </div>
   );

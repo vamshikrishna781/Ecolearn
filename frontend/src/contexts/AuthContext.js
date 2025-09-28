@@ -2,8 +2,8 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import axios from 'axios';
 import toast from 'react-hot-toast';
 
-// Configure axios defaults
-axios.defaults.baseURL = 'http://localhost:5000';
+// Configure axios defaults - use proxy from package.json
+axios.defaults.baseURL = process.env.REACT_APP_BACKEND_URL || '';
 axios.defaults.timeout = 10000; // 10 second timeout
 
 const AuthContext = createContext();

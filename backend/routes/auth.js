@@ -4,7 +4,7 @@ const { body, validationResult } = require('express-validator');
 const User = require('../models/User');
 const OTP = require('../models/OTP');
 const { sendOTPEmail } = require('../utils/emailService');
-const { verifyRecaptcha, generateRecaptchaChallenge } = require('../utils/recaptcha');
+const { verifyRecaptcha, generateRecaptchaChallenge, validChallenges } = require('../utils/recaptcha');
 
 const router = express.Router();
 
@@ -33,6 +33,54 @@ router.get('/recaptcha', async (req, res) => {
     res.json(challenge);
   } catch (error) {
     res.status(500).json({ message: 'Failed to generate reCAPTCHA challenge' });
+  }
+});
+
+// Verify reCAPTCHA answer
+router.post('/verify-recaptcha', async (req, res) => {
+  try {
+    const { token, answer } = req.body;
+    
+    if (!token || !answer) {
+      return res.status(400).json({ 
+        valid: false, 
+        message: 'Token and answer are required' 
+      });
+    }
+    
+    // Get the stored answer for this token
+    const storedAnswer = validChallenges.get(token);
+    
+    if (!storedAnswer) {
+      return res.status(400).json({ 
+        valid: false, 
+        message: 'Invalid or expired token' 
+      });
+    }
+    
+    if (answer.trim() === storedAnswer) {
+      // Mark as verified by storing a verification flag
+      validChallenges.set(token + '_verified', true);
+      
+      res.json({ 
+        valid: true, 
+        message: 'reCAPTCHA verified successfully' 
+      });
+    } else {
+      // Remove invalid token
+      validChallenges.delete(token);
+      
+      res.status(400).json({ 
+        valid: false, 
+        message: 'Incorrect answer' 
+      });
+    }
+  } catch (error) {
+    console.error('reCAPTCHA verification error:', error);
+    res.status(500).json({ 
+      valid: false, 
+      message: 'Verification failed' 
+    });
   }
 });
 

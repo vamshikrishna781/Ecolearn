@@ -25,7 +25,7 @@ const Profile = () => {
   // Debug avatar information
   console.log('Profile Component - User data:', user);
   console.log('User avatar field:', user?.avatar);
-  console.log('Avatar URL would be:', user?.avatar ? `http://localhost:5000${user.avatar}` : 'No avatar');
+  console.log('Avatar URL would be:', user?.avatar || 'No avatar');
   const [editForm, setEditForm] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
@@ -155,7 +155,7 @@ const Profile = () => {
 
     setIsDeletingAccount(true);
     try {
-      const response = await fetch('http://localhost:5000/api/users/delete-account', {
+      const response = await fetch('/api/users/delete-account', {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -195,10 +195,10 @@ const Profile = () => {
               {user?.avatar && user.avatar.trim() ? (
                 <>
                   <img
-                    src={`http://localhost:5000${user.avatar}`}
-                    alt="User Avatar"
-                    className="w-24 h-24 rounded-full object-cover border-4 border-green-100"
-                    onLoad={() => console.log('Avatar loaded successfully:', `http://localhost:5000${user.avatar}`)}
+                    src={user.avatar}
+                    alt="Profile Picture"
+                    className="w-full h-full object-cover rounded-full"
+                    onLoad={() => console.log('Avatar loaded successfully:', user.avatar)}
                     onError={(e) => {
                       console.error('Avatar image failed to load:', e.target.src);
                       console.error('User avatar path:', user.avatar);
